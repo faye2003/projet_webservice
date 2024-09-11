@@ -1,0 +1,168 @@
+openapi: 3.0.0
+info:
+  title: Bank Account Management API
+  description: API RESTful pour la gestion des comptes bancaires permettant la consultation du solde, l’historique des transactions, et le transfert de fonds.
+  version: 1.0.0
+servers:
+  - url: https://api.bank.com/v1
+    description: Serveur de production
+
+paths:
+  /accounts/{accountId}/balance:
+    get:
+      summary: Consultation du solde du compte
+      description: Retourne le solde actuel d'un compte bancaire.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: ID unique du compte à interroger.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Solde du compte récupéré avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                    example: ACC123456
+                  balance:
+                    type: number
+                    format: float
+                    example: 2500.50
+                  currency:
+                    type: string
+                    example: USD
+        '404':
+          description: Compte non trouvé.
+        '500':
+          description: Erreur serveur interne.
+
+  /accounts/{accountId}/transactions:
+    get:
+      summary: Historique des transactions avec pagination
+      description: Retourne l'historique des transactions d'un compte, avec prise en charge de la pagination.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: ID unique du compte pour lequel récupérer les transactions.
+          schema:
+            type: string
+        - name: pageNumber
+          in: query
+          required: false
+          description: Numéro de la page à récupérer. Par défaut 1.
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: Nombre d'éléments par page. Par défaut 10.
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Transactions récupérées avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currentPage:
+                    type: integer
+                    example: 1
+                  totalPages:
+                    type: integer
+                    example: 5
+                  totalItems:
+                    type: integer
+                    example: 50
+                  transactions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        transactionId:
+                          type: string
+                          example: TX12345
+                        amount:
+                          type: number
+                          format: float
+                          example: 100.00
+                        date:
+                          type: string
+                          format: date-time
+                          example: 2024-08-29T13:45:30Z
+                        description:
+                          type: string
+                          example: Payment for invoice #456
+        '404':
+          description: Compte non trouvé.
+        '500':
+          description: Erreur serveur interne.
+
+  /accounts/{accountId}/transfer:
+    post:
+      summary: Effectuer un virement
+      description: Effectue un transfert de fonds entre deux comptes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                creditor:
+                  type: string
+                  description: ID du compte créditeur.
+                  example: ACC123456
+                debtor:
+                  type: string
+                  description: ID du compte débiteur.
+                  example: ACC654321
+                amount:
+                  type: number
+                  description: Montant à transférer.
+                  example: 500.00
+                currency:
+                  type: string
+                  description: Devise du montant transféré.
+                  example: USD
+      responses:
+        '200':
+          description: Virement effectué avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Transfer completed successfully.
+        '400':
+          description: Requête invalide (solde insuffisant, devise incompatible, etc.).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Insufficient balance or currency mismatch.
+        '404':
+          description: Compte non trouvé.
+        '500':
+          description: Erreur serveur interne.
